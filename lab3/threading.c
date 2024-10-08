@@ -27,7 +27,7 @@ void t_init()
 int32_t t_create(fptr foo, int32_t arg1, int32_t arg2) 
 {
     volatile uint8_t ctx_num;
-    for (ctx_num = 0; ctx_num < NUM_CTX; ctx_num++)
+    for (ctx_num = 1; ctx_num < NUM_CTX; ctx_num++)
     {
         if (contexts[ctx_num].state != VALID)
         {
@@ -35,9 +35,8 @@ int32_t t_create(fptr foo, int32_t arg1, int32_t arg2)
             contexts[ctx_num].context.uc_stack.ss_sp = (char*)malloc(STK_SZ);
             contexts[ctx_num].context.uc_stack.ss_flags = 0;
             contexts[ctx_num].context.uc_link = NULL;
-            current_context_idx = ctx_num;
-            makecontext(&contexts[ctx_num].context, (ctx_ptr)foo, 2, arg1, arg2);
             contexts[ctx_num].state = VALID;
+            makecontext(&contexts[ctx_num].context, (ctx_ptr)foo, 2, arg1, arg2);
             return 0;
 
         }
@@ -48,19 +47,20 @@ int32_t t_create(fptr foo, int32_t arg1, int32_t arg2)
 
 int32_t t_yield() 
 {
+    uint8_t copyCurrContextIdx = current_context_idx;
     volatile uint8_t nextCtx;
-    for (nextCtx = 0; nextCtx < NUM_CTX; nextCtx++)
+    for (nextCtx = 1; nextCtx < NUM_CTX; nextCtx++)
     {
         if((nextCtx != current_context_idx) && (contexts[nextCtx].state == VALID))
         {
-            swapcontext(&contexts[current_context_idx].context, &contexts[nextCtx].context);
             current_context_idx = nextCtx;
-            break;
+            swapcontext(&contexts[copyCurrContextIdx].context, &contexts[nextCtx].context);
+            return 0;
         }
 
     }
     int countValidCtx = 0;
-    for (int i = 0; i<NUM_CTX; i++)
+    for (int i = 1; i<NUM_CTX; i++)
     {
         if(contexts[i].state == VALID)
         {
