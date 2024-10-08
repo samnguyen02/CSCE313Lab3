@@ -74,5 +74,6 @@ int32_t t_yield()
 void t_finish() 
 {
     contexts[current_context_idx].state = DONE;
+    free(contexts[current_context_idx].context.uc_stack.ss_sp);
     t_yield();
 }
